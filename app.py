@@ -3,30 +3,65 @@ import stripe
 from datetime import datetime, timezone, timedelta
 import os
 
-# Stripe key берётся из Render Environment
-stripe.api_key = os.environ.get("mk_1SdOnoJNr1UL0NgJ70Bh82mt")
+stripe.api_key = os.environ.get("mk_1N1ytgJNr1UL0NgJNPwylRa5")
 
 app = Flask(__name__)
 
-def get_today_range_utc():
+def get_today_start_utc():
     now = datetime.now(timezone.utc)
     start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-    end = start + timedelta(days=1)
-    return int(start.timestamp()), int(end.timestamp())
+    return int(start.timestamp())
 
-def count_customers(query):
-    res = stripe.Customer.search(query=query, limit=1)
-    return res.get("total_count", 0)
+def count_all_customers():
+    total = 0
+    starting_after = None
+
+    while True:
+        params = {"limit": 100}
+        if starting_after:
+            params["starting_after"] = starting_after
+
+        res = stripe.Customer.list(**params)
+        total += len(res.data)
+
+        if not res.has_more:
+            break
+
+        starting_after = res.data[-1].id
+
+    return total
+
+def count_today_customers():
+    start_ts = get_today_start_utc()
+    count = 0
+    starting_after = None
+
+    while True:
+        params = {
+            "limit": 100,
+            "created": {"gte": start_ts}
+        }
+        if starting_after:
+            params["starting_after"] = starting_after
+
+        res = stripe.Customer.list(**params)
+        count += len(res.data)
+
+        if not res.has_more:
+            break
+
+        starting_after = res.data[-1].id
+
+    return count
 
 @app.route("/stats")
 def stats():
     try:
-        total = count_customers("created>0")
-        start_ts, end_ts = get_today_range_utc()
-        today = count_customers(f"created>={start_ts} AND created<{end_ts}")
+        total = count_all_customers()
+        today = count_today_customers()
         return jsonify({"total": total, "today": today})
     except Exception as e:
-        print("ERROR:", e)
+        print("STRIPE ERROR:", e)
         return jsonify({"error": "stripe_error"}), 500
 
 @app.route("/")
