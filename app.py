@@ -3,7 +3,9 @@ import stripe
 from datetime import datetime, timezone, timedelta
 import os
 
-stripe.api_key = os.environ.get("mk_1N1ytgJNr1UL0NgJNPwylRa5")
+stripe.api_key = os.environ.get("rk_live_51N1yt8JNr1UL0NgJDrBecC4n6xtLLNosAJA5
+S3RXUpLaicqKeas7RhLMHenGLD0bvJA2W6Zn1ks0WBcFt
+33P8d5300dlqdlwxD")
 
 app = Flask(__name__)
 
