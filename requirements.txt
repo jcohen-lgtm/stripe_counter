@@ -1,0 +1,3 @@
+Flask
+Stripe
+Gunicorn
